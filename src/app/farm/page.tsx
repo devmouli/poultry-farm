@@ -72,6 +72,15 @@ export default function FarmerDashboard() {
 
     const createBatch = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        const numBirds = parseInt(bBirds);
+        const avgWeight = parseFloat(bWeight);
+        const price = parseFloat(bPrice);
+
+        if (numBirds <= 0 || avgWeight <= 0 || price <= 0) {
+            return alert('All values must be greater than zero.');
+        }
+
         const { error } = await supabase.from('batches').insert({
             farm_id: farm.id,
             number_of_birds: parseInt(bBirds),
@@ -189,9 +198,9 @@ export default function FarmerDashboard() {
                     <div className="bg-white rounded-xl max-w-md w-full p-6">
                         <h2 className="text-xl font-bold mb-4">Create New Batch</h2>
                         <form onSubmit={createBatch} className="space-y-4">
-                            <input required type="number" placeholder="Number of Birds" className="w-full px-3 py-2 border rounded-lg" value={bBirds} onChange={e => setBbirds(e.target.value)} />
-                            <input required type="number" step="0.1" placeholder="Average Weight (kg)" className="w-full px-3 py-2 border rounded-lg" value={bWeight} onChange={e => setBweight(e.target.value)} />
-                            <input required type="number" placeholder="Price per kg (₹)" className="w-full px-3 py-2 border rounded-lg" value={bPrice} onChange={e => setBprice(e.target.value)} />
+                            <input required type="number" min="1" placeholder="Number of Birds" className="w-full px-3 py-2 border rounded-lg" value={bBirds} onChange={e => setBbirds(e.target.value)} />
+                            <input required type="number" min="0.1" step="0.1" placeholder="Average Weight (kg)" className="w-full px-3 py-2 border rounded-lg" value={bWeight} onChange={e => setBweight(e.target.value)} />
+                            <input required type="number" min="1" placeholder="Price per kg (₹)" className="w-full px-3 py-2 border rounded-lg" value={bPrice} onChange={e => setBprice(e.target.value)} />
                             <div>
                                 <label className="block text-xs text-gray-500 mb-1">Expected Ready Date</label>
                                 <input required type="date" className="w-full px-3 py-2 border rounded-lg" value={bDate} onChange={e => setBdate(e.target.value)} />

@@ -65,6 +65,8 @@ export default function TraderDashboard() {
         setPlacingOrder(true);
 
         const qty = parseInt(orderQuantity);
+        if (isNaN(qty) || qty <= 0) return alert('Quantity must be at least 1 bird.');
+        if (qty > selectedBatch.available_birds) return alert('Not enough birds available.');
         const totalPrice = qty * selectedBatch.average_weight_kg * selectedBatch.price_per_kg;
 
         const { error } = await supabase.from('orders').insert({
@@ -166,8 +168,8 @@ export default function TraderDashboard() {
                                     <div className="text-gray-500 text-xs mb-2">{order.batches?.farms?.farm_name}</div>
                                     <div className="flex items-center gap-2">
                                         <span className={`px-2 py-1 rounded text-xs font-bold ${order.status === 'PLACED' ? 'bg-yellow-100 text-yellow-800' :
-                                                order.status === 'ACCEPTED' ? 'bg-emerald-100 text-emerald-800' :
-                                                    order.status === 'REJECTED' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
+                                            order.status === 'ACCEPTED' ? 'bg-emerald-100 text-emerald-800' :
+                                                order.status === 'REJECTED' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
                                             }`}>
                                             {order.status}
                                         </span>
@@ -195,6 +197,7 @@ export default function TraderDashboard() {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Quantity (Number of Birds)</label>
                                 <input
                                     type="number"
+                                    min="1"
                                     max={selectedBatch.available_birds}
                                     required
                                     value={orderQuantity}
