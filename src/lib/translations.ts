@@ -23,7 +23,17 @@ export const dict = {
         available: "Available",
         accept_deal: "Accept Deal",
         decline: "Decline",
-        new_offer: "NEW PRICE OFFERED"
+        new_offer: "NEW PRICE OFFERED",
+        welcome_back: "Welcome Back",
+        email: "Email",
+        password: "Password",
+        logging_in: "Logging in...",
+        create_account_title: "Create an Account",
+        full_name: "Full Name",
+        phone: "Phone Number",
+        role_trader: "I am a Trader",
+        role_farmer: "I am a Farmer",
+        creating: "Creating..."
     },
     hi: {
         brand: "शिवा राजेश पोल्ट्री",
@@ -49,7 +59,17 @@ export const dict = {
         available: "उपलब्ध",
         accept_deal: "मंजूर करें",
         decline: "अस्वीकार",
-        new_offer: "नया भाव मिला"
+        new_offer: "नया भाव मिला",
+        welcome_back: "वापसी पर स्वागत है",
+        email: "ईमेल",
+        password: "पासवर्ड",
+        logging_in: "लॉग इन हो रहा है...",
+        create_account_title: "खाता बनाएं",
+        full_name: "पूरा नाम",
+        phone: "फ़ोन नंबर",
+        role_trader: "मैं एक व्यापारी हूँ",
+        role_farmer: "मैं एक किसान हूँ",
+        creating: "बन रहा है..."
     },
     te: {
         brand: "శివ రాజేష్ పౌల్ట్రీ",
@@ -75,6 +95,16 @@ export const dict = {
         available: "అందుబాటులో",
         accept_deal: "అంగీకరించు",
         decline: "తిరస్కరించు",
-        new_offer: "కొత్త ధర ఆఫర్"
+        new_offer: "కొత్త ధర ఆఫర్",
+        welcome_back: "తిరిగి స్వాగతం",
+        email: "ఈమెయిల్",
+        password: "పాస్వర్డ్",
+        logging_in: "లాగిన్ అవుతోంది...",
+        create_account_title: "ఖాతాను సృష్టించండి",
+        full_name: "పూర్తి పేరు",
+        phone: "ఫోన్ నంబర్",
+        role_trader: "నేను ఒక వ్యాపారిని",
+        role_farmer: "నేను ఒక రైతున్నీ",
+        creating: "సృష్టిస్తోంది..."
     }
 };
