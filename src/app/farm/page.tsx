@@ -92,7 +92,9 @@ export default function FarmerDashboard() {
         if (status === 'ACCEPTED') {
             const batch = batches.find(b => b.id === batchId);
             if (batch) {
-                await supabase.from('batches').update({ available_birds: batch.available_birds - qty }).eq('id', batchId);
+                const newAvailable = batch.available_birds - qty;
+                const newStatus = newAvailable <= 0 ? 'CLOSED' : 'OPEN';
+                await supabase.from('batches').update({ available_birds: newAvailable, status: newStatus }).eq('id', batchId);
             }
         }
         loadData(user.id);
