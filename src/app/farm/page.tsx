@@ -55,7 +55,7 @@ export default function FarmerDashboard() {
         }
 
         const { data: profile } = await supabase.from('profiles').select('role, status').eq('id', data.user.id).single();
-        if (profile?.role !== 'FARMER') {
+        if (profile?.role !== 'ADMIN') {
             window.location.href = '/trader';
             return;
         }

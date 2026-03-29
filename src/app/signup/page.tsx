@@ -11,7 +11,7 @@ export default function Signup() {
     const [password, setPassword] = useState('');
     const [fullName, setFullName] = useState('');
     const [phone, setPhone] = useState('');
-    const [role, setRole] = useState<'FARMER' | 'TRADER'>('FARMER');
+    const role = 'TRADER';
 
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -48,8 +48,7 @@ export default function Signup() {
                 return;
             }
 
-            if (role === 'FARMER') router.push('/farm');
-            else router.push('/trader');
+            router.push('/trader');
         }
     };
 
@@ -61,22 +60,6 @@ export default function Signup() {
                 {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4">{error}</div>}
 
                 <form onSubmit={handleSignup} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                        <button
-                            type="button"
-                            onClick={() => setRole('FARMER')}
-                            className={`py-3 rounded-lg border text-sm font-medium transition ${role === 'FARMER' ? 'bg-green-50 border-green-600 text-green-700' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
-                        >
-                            {t("role_farmer")}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setRole('TRADER')}
-                            className={`py-3 rounded-lg border text-sm font-medium transition ${role === 'TRADER' ? 'bg-blue-50 border-blue-600 text-blue-700' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
-                        >
-                            {t("role_trader")}
-                        </button>
-                    </div>
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">{t("full_name")}</label>
