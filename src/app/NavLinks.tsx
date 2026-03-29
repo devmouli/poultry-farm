@@ -27,17 +27,18 @@ export default function NavLinks() {
         return <Link href="/trader" className="text-gray-600 font-semibold hover:text-green-600 transition">{t("trader_panel")}</Link>;
     }
 
-    if (role === 'FARMER') {
-        return <Link href="/farm" className="text-gray-600 font-semibold hover:text-green-600 transition">{t("farm_panel")}</Link>;
-    }
-
     if (role === 'ADMIN') {
-        return <Link href="/admin" className="text-gray-600 font-semibold hover:text-green-600 transition">Admin Panel</Link>;
+        return (
+            <div className="flex gap-4 items-center">
+                <Link href="/farm" className="text-gray-600 font-semibold hover:text-green-600 transition">{t("farm_panel")}</Link>
+                <Link href="/admin" className="text-gray-600 font-semibold hover:text-green-600 transition">Admin Panel</Link>
+            </div>
+        );
     }
 
     return (
-        <div className="flex gap-4">
-            <Link href="/login" className="text-gray-600 font-semibold hover:text-gray-900 transition mt-2">{t("login")}</Link>
+        <div className="flex gap-4 items-center">
+            <Link href="/login" className="text-gray-600 font-semibold hover:text-gray-900 transition">{t("login")}</Link>
             <Link href="/signup" className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-800 transition shadow-sm">{t("signup")}</Link>
         </div>
     );
