@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { Package, MapPin, Search, ChevronRight } from 'lucide-react';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function TraderDashboard() {
+    const { t } = useLanguage();
     const [batches, setBatches] = useState<any[]>([]);
     const [myOrders, setMyOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -65,7 +67,6 @@ export default function TraderDashboard() {
 
     const fetchData = async (userId: string) => {
         setLoading(true);
-        // 1. Fetch OPEN batches
         let query = supabase
             .from('batches')
             .select('*, farms(farm_name, location_district)')
@@ -82,7 +83,6 @@ export default function TraderDashboard() {
         const { data: bData } = await query;
         if (bData) setBatches(bData);
 
-        // 2. Fetch trader's orders
         const { data: oData } = await supabase
             .from('orders')
             .select('*, batches(farms(farm_name))')
@@ -125,8 +125,8 @@ export default function TraderDashboard() {
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-bold text-gray-900">Trader Marketplace</h1>
-                <button className="text-sm bg-white border px-4 py-2 rounded-lg" onClick={() => supabase.auth.signOut().then(() => window.location.href = '/login')}>Sign Out</button>
+                <h1 className="text-3xl font-bold text-gray-900">{t("marketplace")}</h1>
+                <button className="text-sm bg-white border px-4 py-2 rounded-lg" onClick={() => supabase.auth.signOut().then(() => window.location.href = '/login')}>{t("signout")}</button>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
@@ -135,25 +135,25 @@ export default function TraderDashboard() {
                     <div className="bg-white p-4 rounded-xl shadow-sm border grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div className="flex items-center gap-2 border-b md:border-b-0 md:border-r px-2 pb-2 md:pb-0">
                             <Search className="text-gray-400 w-4 h-4" />
-                            <input type="text" value={districtFilter} onChange={(e) => setDistrictFilter(e.target.value)} onBlur={() => fetchData(user?.id)} placeholder="District..." className="w-full bg-transparent outline-none focus:ring-0 text-sm font-medium text-gray-700" />
+                            <input type="text" value={districtFilter} onChange={(e) => setDistrictFilter(e.target.value)} onBlur={() => fetchData(user?.id)} placeholder={t("district_search")} className="w-full bg-transparent outline-none focus:ring-0 text-sm font-medium text-gray-700" />
                         </div>
                         <div className="flex items-center gap-2 border-b md:border-b-0 md:border-r px-2 pb-2 md:pb-0">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-16">Min Wt:</span>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-16">{t("min_wt")}:</span>
                             <input type="number" step="0.1" value={minWeight} onChange={(e) => setMinWeight(e.target.value)} onBlur={() => fetchData(user?.id)} placeholder="kg" className="w-full bg-transparent outline-none focus:ring-0 text-sm font-medium text-gray-700" />
                         </div>
                         <div className="flex items-center gap-2 border-b md:border-b-0 md:border-r px-2 pb-2 md:pb-0">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-16">Max Price:</span>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-16">{t("max_price")}:</span>
                             <input type="number" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} onBlur={() => fetchData(user?.id)} placeholder="₹/kg" className="w-full bg-transparent outline-none focus:ring-0 text-sm font-medium text-gray-700" />
                         </div>
                         <div className="flex items-center gap-2 px-2">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-16">Min Qty:</span>
-                            <input type="number" value={minBirds} onChange={(e) => setMinBirds(e.target.value)} onBlur={() => fetchData(user?.id)} placeholder="birds" className="w-full bg-transparent outline-none focus:ring-0 text-sm font-medium text-gray-700" />
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-16">{t("min_qty")}:</span>
+                            <input type="number" value={minBirds} onChange={(e) => setMinBirds(e.target.value)} onBlur={() => fetchData(user?.id)} placeholder={t("birds")} className="w-full bg-transparent outline-none focus:ring-0 text-sm font-medium text-gray-700" />
                         </div>
                     </div>
 
                     <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
                         <div className="p-4 border-b bg-gray-50/50">
-                            <h2 className="font-semibold text-gray-700">Available Poultry Batches</h2>
+                            <h2 className="font-semibold text-gray-700">{t("avail_batches")}</h2>
                         </div>
                         {loading ? (
                             <div className="p-8 text-center text-gray-500">Loading market...</div>
@@ -170,7 +170,7 @@ export default function TraderDashboard() {
                                             </div>
                                             <div className="flex gap-4 mt-3">
                                                 <span className="text-sm bg-blue-50 text-blue-700 px-2 py-1 rounded-md font-medium">
-                                                    {batch.available_birds} birds
+                                                    {batch.available_birds} {t("birds")}
                                                 </span>
                                                 <span className="text-sm bg-green-50 text-green-700 px-2 py-1 rounded-md font-medium">
                                                     ₹{batch.price_per_kg}/kg
@@ -184,7 +184,7 @@ export default function TraderDashboard() {
                                             onClick={() => setSelectedBatch(batch)}
                                             className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition shadow-sm"
                                         >
-                                            Buy Now
+                                            {t("buy_now")}
                                         </button>
                                     </div>
                                 ))}
@@ -197,13 +197,13 @@ export default function TraderDashboard() {
                 <div className="space-y-6">
                     <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
                         <div className="p-4 border-b bg-gray-50/50">
-                            <h2 className="font-semibold text-gray-700">My Orders</h2>
+                            <h2 className="font-semibold text-gray-700">{t("my_orders")}</h2>
                         </div>
                         <div className="p-4 space-y-4">
                             {myOrders.map(order => (
                                 <div key={order.id} className="border rounded-lg p-3 text-sm">
                                     <div className="flex justify-between font-medium mb-1">
-                                        <span>{order.quantity_birds} birds</span>
+                                        <span>{order.quantity_birds} {t("birds")}</span>
                                         <span>₹{order.total_price}</span>
                                     </div>
                                     <div className="text-gray-500 text-xs mb-2">{order.batches?.farms?.farm_name}</div>
@@ -213,12 +213,12 @@ export default function TraderDashboard() {
                                                 order.status === 'COUNTER_OFFER' ? 'bg-purple-100 text-purple-800' :
                                                     order.status === 'REJECTED' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
                                             }`}>
-                                            {order.status === 'COUNTER_OFFER' ? 'NEW PRICE OFFERED' : order.status}
+                                            {order.status === 'COUNTER_OFFER' ? t("new_offer") : order.status}
                                         </span>
                                         {order.status === 'COUNTER_OFFER' && (
                                             <div className="flex gap-2 w-full mt-1">
-                                                <button onClick={() => acceptCounter(order)} className="flex-1 bg-green-600 text-white px-3 py-1.5 rounded text-xs font-bold shadow-sm">Accept Deal</button>
-                                                <button onClick={() => declineOrder(order.id)} className="bg-red-50 text-red-700 border px-3 py-1.5 rounded text-xs font-bold hover:bg-red-100">Decline</button>
+                                                <button onClick={() => acceptCounter(order)} className="flex-1 bg-green-600 text-white px-3 py-1.5 rounded text-xs font-bold shadow-sm">{t("accept_deal")}</button>
+                                                <button onClick={() => declineOrder(order.id)} className="bg-red-50 text-red-700 border px-3 py-1.5 rounded text-xs font-bold hover:bg-red-100">{t("decline")}</button>
                                             </div>
                                         )}
                                     </div>
@@ -234,10 +234,10 @@ export default function TraderDashboard() {
             {selectedBatch && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-xl max-w-md w-full p-6">
-                        <h2 className="text-xl font-bold mb-4">Place Order</h2>
+                        <h2 className="text-xl font-bold mb-4">{t("place_order")}</h2>
                         <div className="mb-4 text-sm text-gray-600">
                             <p>Farm: {selectedBatch.farms?.farm_name}</p>
-                            <p>Available: {selectedBatch.available_birds} birds</p>
+                            <p>{t("available")}: {selectedBatch.available_birds} {t("birds")}</p>
                             <p>Price: ₹{selectedBatch.price_per_kg}/kg</p>
                         </div>
                         <form onSubmit={handlePlaceOrder} className="space-y-4">
@@ -260,9 +260,9 @@ export default function TraderDashboard() {
                                 </span>
                             </div>
                             <div className="flex gap-2">
-                                <button type="button" onClick={() => setSelectedBatch(null)} className="flex-1 px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50 border-gray-300">Cancel</button>
+                                <button type="button" onClick={() => setSelectedBatch(null)} className="flex-1 px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50 border-gray-300">{t("cancel")}</button>
                                 <button type="submit" disabled={placingOrder} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">
-                                    {placingOrder ? 'Confirming...' : 'Confirm Order'}
+                                    {placingOrder ? 'Confirming...' : t("confirm_order")}
                                 </button>
                             </div>
                         </form>

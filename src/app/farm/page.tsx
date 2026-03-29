@@ -3,15 +3,16 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Plus, Users, Clock, CheckCircle, AlertTriangle, TrendingUp, Activity } from 'lucide-react';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function FarmerDashboard() {
+    const { t } = useLanguage();
     const [user, setUser] = useState<any>(null);
     const [farm, setFarm] = useState<any>(null);
     const [batches, setBatches] = useState<any[]>([]);
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Forms
     const [farmName, setFarmName] = useState('');
     const [district, setDistrict] = useState('');
     const [stateName, setStateName] = useState('');
@@ -152,7 +153,6 @@ export default function FarmerDashboard() {
 
     const pendingOrders = orders.filter(o => o.status === 'PLACED');
 
-    // Group all orders by Trader
     const tradersMap = orders.reduce((acc: any, order: any) => {
         const tId = order.trader_id;
         if (!acc[tId]) acc[tId] = { profile: order.profiles, history: [], totalApprovedSpent: 0, totalApprovedBirds: 0 };
@@ -165,12 +165,11 @@ export default function FarmerDashboard() {
     }, {});
     const traderGroups = Object.values(tradersMap);
 
-    // Compute Overall Farm Metrics
     const activeBatches = batches.filter(b => b.status === 'OPEN');
     const totalInventory = activeBatches.reduce((sum, b) => sum + b.available_birds, 0);
     const projectedRevenue = activeBatches.reduce((sum, b) => sum + (b.available_birds * b.average_weight_kg * b.price_per_kg), 0);
     const allTimeRevenue = orders.reduce((sum, o) => (o.status === 'ACCEPTED' || o.status === 'DELIVERED') ? sum + o.total_price : sum, 0);
-    const needsReplenishment = totalInventory < 500; // Warning threshold
+    const needsReplenishment = totalInventory < 500;
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -181,36 +180,35 @@ export default function FarmerDashboard() {
                 </div>
                 <div className="flex gap-4">
                     <button onClick={() => setShowBatchModal(true)} className="bg-green-600 shadow-lg text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-green-700 transition flex items-center gap-2 transform hover:-translate-y-0.5">
-                        <Plus className="w-4 h-4" /> Add New Batch
+                        <Plus className="w-4 h-4" /> {t("add_batch")}
                     </button>
-                    <button className="text-sm bg-white border px-5 py-2.5 rounded-xl font-semibold text-gray-700 hover:bg-gray-50" onClick={() => supabase.auth.signOut().then(() => window.location.href = '/login')}>Sign Out</button>
+                    <button className="text-sm bg-white border px-5 py-2.5 rounded-xl font-semibold text-gray-700 hover:bg-gray-50" onClick={() => supabase.auth.signOut().then(() => window.location.href = '/login')}>{t("signout")}</button>
                 </div>
             </div>
 
-            {/* Farm Metrics & Replenishment Overview */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <div className="bg-white p-5 rounded-2xl border shadow-sm">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide flex items-center gap-1.5"><Activity className="w-4 h-4" /> Total Live Stock</p>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide flex items-center gap-1.5"><Activity className="w-4 h-4" /> {t("total_stock")}</p>
                     <div className="mt-2">
                         <span className="text-3xl font-extrabold text-gray-900">{totalInventory.toLocaleString()}</span>
-                        <span className="text-sm text-gray-500 font-medium ml-1">birds</span>
+                        <span className="text-sm text-gray-500 font-medium ml-1">{t("birds")}</span>
                     </div>
                 </div>
                 <div className="bg-white p-5 rounded-2xl border shadow-sm">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide flex items-center gap-1.5"><TrendingUp className="w-4 h-4 text-blue-500" /> Projected Value</p>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide flex items-center gap-1.5"><TrendingUp className="w-4 h-4 text-blue-500" /> {t("projected_value")}</p>
                     <div className="mt-2 text-2xl font-extrabold text-blue-600">
                         ₹{projectedRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                     </div>
                 </div>
                 <div className="bg-white p-5 rounded-2xl border shadow-sm">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-500" /> Lifetime Sales</p>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-500" /> {t("lifetime_sales")}</p>
                     <div className="mt-2 text-2xl font-extrabold text-green-600">
                         ₹{allTimeRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                     </div>
                 </div>
                 <div className={`p-5 rounded-2xl border shadow-sm ${needsReplenishment ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'}`}>
                     <p className={`text-xs font-bold uppercase tracking-wide flex items-center gap-1.5 ${needsReplenishment ? 'text-red-700' : 'text-emerald-700'}`}>
-                        {needsReplenishment ? <AlertTriangle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />} Inventory Health
+                        {needsReplenishment ? <AlertTriangle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />} {t("inventory_health")}
                     </p>
                     <div className="mt-2 font-bold text-lg">
                         {needsReplenishment ? (
@@ -223,17 +221,16 @@ export default function FarmerDashboard() {
             </div>
 
             <div className="grid lg:grid-cols-3 gap-8 mb-12">
-                {/* Column 1: Active Batches */}
                 <div className="lg:col-span-1 border rounded-2xl bg-white shadow-sm overflow-hidden flex flex-col">
                     <div className="p-5 border-b bg-gray-50/50 flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600"><CheckCircle className="w-4 h-4" /></div>
-                        <h2 className="font-bold text-gray-900">My Batches</h2>
+                        <h2 className="font-bold text-gray-900">{t("my_batches")}</h2>
                     </div>
                     <div className="divide-y flex-1 overflow-y-auto max-h-[500px]">
                         {batches.map(b => (
                             <div key={b.id} className="p-5 hover:bg-gray-50 transition">
                                 <div className="flex justify-between items-start mb-2">
-                                    <span className="font-bold text-gray-900">{b.available_birds} birds left</span>
+                                    <span className="font-bold text-gray-900">{b.available_birds} {t("birds")}</span>
                                     <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${b.status === 'OPEN' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
                                         {b.status}
                                     </span>
@@ -248,12 +245,11 @@ export default function FarmerDashboard() {
                     </div>
                 </div>
 
-                {/* Column 2: Pending Order Approvals */}
                 <div className="lg:col-span-2 border rounded-2xl bg-white shadow-sm overflow-hidden flex flex-col">
                     <div className="p-5 border-b bg-yellow-50/50 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <div className="w-8 h-8 rounded-lg bg-yellow-100 flex items-center justify-center text-yellow-700"><Clock className="w-4 h-4" /></div>
-                            <h2 className="font-bold text-gray-900">Action Required: Pending Requests</h2>
+                            <h2 className="font-bold text-gray-900">{t("pending_requests")}</h2>
                         </div>
                         <span className="bg-yellow-200 text-yellow-800 text-xs font-bold px-2.5 py-1 rounded-full">{pendingOrders.length} New</span>
                     </div>
@@ -267,18 +263,18 @@ export default function FarmerDashboard() {
                                     </div>
                                     <div className="text-right">
                                         <div className="font-extrabold text-blue-600 text-xl">₹{o.total_price}</div>
-                                        <div className="text-sm text-gray-600 font-medium">For {o.quantity_birds} birds</div>
+                                        <div className="text-sm text-gray-600 font-medium">For {o.quantity_birds} {t("birds")}</div>
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-3 mt-4">
                                     <div className="flex gap-2">
-                                        <button onClick={() => updateOrderStatus(o.id, 'ACCEPTED', o.batch_id, o.quantity_birds)} className="flex-1 bg-green-600 text-white py-2.5 rounded-xl text-sm font-bold hover:bg-green-700 shadow-sm transition">Accept Order</button>
-                                        <button onClick={() => updateOrderStatus(o.id, 'REJECTED', o.batch_id, 0)} className="flex-1 bg-red-50 text-red-700 py-2.5 rounded-xl text-sm font-bold hover:bg-red-100 transition">Reject</button>
+                                        <button onClick={() => updateOrderStatus(o.id, 'ACCEPTED', o.batch_id, o.quantity_birds)} className="flex-1 bg-green-600 text-white py-2.5 rounded-xl text-sm font-bold hover:bg-green-700 shadow-sm transition">{t("accept_order")}</button>
+                                        <button onClick={() => updateOrderStatus(o.id, 'REJECTED', o.batch_id, 0)} className="flex-1 bg-red-50 text-red-700 py-2.5 rounded-xl text-sm font-bold hover:bg-red-100 transition">{t("reject_order")}</button>
                                     </div>
                                     <div className="flex gap-2 items-center bg-gray-50 p-2 rounded-xl border">
                                         <span className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-2">Counter:</span>
                                         <input type="number" placeholder="New ₹/kg" className="w-24 px-3 py-1.5 text-sm border rounded-lg" value={counterPrices[o.id] || ''} onChange={e => setCounterPrices({ ...counterPrices, [o.id]: e.target.value })} />
-                                        <button onClick={() => applyCounterOffer(o)} className="flex-1 bg-purple-100 text-purple-700 py-1.5 rounded-lg text-sm font-bold hover:bg-purple-200 transition">Suggest Price</button>
+                                        <button onClick={() => applyCounterOffer(o)} className="flex-1 bg-purple-100 text-purple-700 py-1.5 rounded-lg text-sm font-bold hover:bg-purple-200 transition">{t("suggest_price")}</button>
                                     </div>
                                 </div>
                             </div>
@@ -288,17 +284,15 @@ export default function FarmerDashboard() {
                 </div>
             </div>
 
-            {/* Bottom Row: Trader CRM / Network History */}
             <div className="border rounded-2xl bg-white shadow-sm overflow-hidden mb-8">
                 <div className="p-6 border-b bg-gray-50/50 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center text-purple-700"><Users className="w-5 h-5" /></div>
                         <div>
-                            <h2 className="text-xl font-bold text-gray-900 tracking-tight">Trader Network & CRM</h2>
+                            <h2 className="text-xl font-bold text-gray-900 tracking-tight">{t("trader_network")}</h2>
                             <p className="text-sm text-gray-500">Track lifetime volume and order history for every trader.</p>
                         </div>
                     </div>
-                    <span className="bg-gray-100 text-gray-700 text-sm font-bold px-3 py-1.5 rounded-lg">{traderGroups.length} Traders Networked</span>
                 </div>
 
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 p-6 gap-6 bg-gray-50/30">
@@ -315,43 +309,16 @@ export default function FarmerDashboard() {
                                     <div className="text-xs font-bold text-gray-500 bg-gray-100 inline-block px-2 py-0.5 rounded">{t.totalApprovedBirds} Birds</div>
                                 </div>
                             </div>
-                            <div className="p-0">
-                                <details className="group">
-                                    <summary className="cursor-pointer p-4 text-sm font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 flex justify-between items-center transition select-none">
-                                        View Order History ({t.history.length})
-                                        <span className="transition group-open:rotate-180">▼</span>
-                                    </summary>
-                                    <div className="px-4 py-2 divide-y border-t bg-white max-h-48 overflow-y-auto">
-                                        {t.history.map((hOrder: any) => (
-                                            <div key={hOrder.id} className="py-2 flex justify-between items-center text-sm">
-                                                <div>
-                                                    <div className="font-semibold">{hOrder.quantity_birds} birds</div>
-                                                    <div className="text-xs text-gray-500">{new Date(hOrder.created_at).toLocaleDateString()}</div>
-                                                </div>
-                                                <div className="text-right">
-                                                    <div className="font-medium text-gray-900">₹{hOrder.total_price}</div>
-                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-bold uppercase ${hOrder.status === 'ACCEPTED' ? 'bg-green-100 text-green-800' :
-                                                        hOrder.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
-                                                            hOrder.status === 'PLACED' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100'} `}>
-                                                        {hOrder.status}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </details>
-                            </div>
                         </div>
                     ))}
                     {traderGroups.length === 0 && <div className="col-span-full py-8 text-center text-gray-500">You haven't networked with any traders yet.</div>}
                 </div>
             </div>
 
-            {/* Batch Creation Modal */}
             {showBatchModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl">
-                        <h2 className="text-2xl font-extrabold text-gray-900 mb-6">Create New Batch</h2>
+                        <h2 className="text-2xl font-extrabold text-gray-900 mb-6">{t("add_batch")}</h2>
                         <form onSubmit={createBatch} className="space-y-5">
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">Number of Birds</label>
@@ -370,8 +337,8 @@ export default function FarmerDashboard() {
                                 <input required type="date" className="w-full px-4 py-3 border rounded-xl bg-gray-50 focus:bg-white transition" value={bDate} onChange={e => setBdate(e.target.value)} />
                             </div>
                             <div className="flex gap-3 pt-4 border-t">
-                                <button type="button" onClick={() => setShowBatchModal(false)} className="flex-1 px-4 py-3 border rounded-xl font-bold text-gray-600 hover:bg-gray-50 transition">Cancel</button>
-                                <button type="submit" className="flex-1 px-4 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-md transition">Create Batch</button>
+                                <button type="button" onClick={() => setShowBatchModal(false)} className="flex-1 px-4 py-3 border rounded-xl font-bold text-gray-600 hover:bg-gray-50 transition">{t("cancel")}</button>
+                                <button type="submit" className="flex-1 px-4 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-md transition">{t("add_batch")}</button>
                             </div>
                         </form>
                     </div>
