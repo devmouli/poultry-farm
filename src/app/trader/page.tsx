@@ -207,13 +207,20 @@ export default function TraderDashboard() {
                                         <span>₹{order.total_price}</span>
                                     </div>
                                     <div className="text-gray-500 text-xs mb-2">{order.batches?.farms?.farm_name}</div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex flex-col items-start gap-2">
                                         <span className={`px-2 py-1 rounded text-xs font-bold ${order.status === 'PLACED' ? 'bg-yellow-100 text-yellow-800' :
                                             order.status === 'ACCEPTED' ? 'bg-emerald-100 text-emerald-800' :
-                                                order.status === 'REJECTED' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
+                                                order.status === 'COUNTER_OFFER' ? 'bg-purple-100 text-purple-800' :
+                                                    order.status === 'REJECTED' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
                                             }`}>
-                                            {order.status}
+                                            {order.status === 'COUNTER_OFFER' ? 'NEW PRICE OFFERED' : order.status}
                                         </span>
+                                        {order.status === 'COUNTER_OFFER' && (
+                                            <div className="flex gap-2 w-full mt-1">
+                                                <button onClick={() => acceptCounter(order)} className="flex-1 bg-green-600 text-white px-3 py-1.5 rounded text-xs font-bold shadow-sm">Accept Deal</button>
+                                                <button onClick={() => declineOrder(order.id)} className="bg-red-50 text-red-700 border px-3 py-1.5 rounded text-xs font-bold hover:bg-red-100">Decline</button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}
