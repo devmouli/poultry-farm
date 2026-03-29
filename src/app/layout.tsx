@@ -6,8 +6,8 @@ import Link from 'next/link';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'PoultryConnect - B2B Marketplace',
-  description: 'Connect poultry farms directly with traders.',
+  title: 'Siva Rajesh Poultry Farm',
+  description: 'Official B2B trading platform for Siva Rajesh Poultry Farm.',
 };
 
 export default function RootLayout({
@@ -22,9 +22,9 @@ export default function RootLayout({
           <div className="container mx-auto px-4 h-16 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold">P</span>
+                <span className="text-white font-bold">S</span>
               </div>
-              <span className="text-xl font-bold tracking-tight text-gray-900">PoultryConnect</span>
+              <span className="text-xl font-bold tracking-tight text-gray-900">Siva Rajesh Poultry Farm</span>
             </Link>
             <nav className="flex items-center gap-4">
               <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900">
