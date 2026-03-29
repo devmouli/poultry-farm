@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Plus, Users, Clock, CheckCircle } from 'lucide-react';
+import { Plus, Users, Clock, CheckCircle, AlertTriangle, TrendingUp, Activity } from 'lucide-react';
 
 export default function FarmerDashboard() {
     const [user, setUser] = useState<any>(null);
@@ -145,6 +145,13 @@ export default function FarmerDashboard() {
     }, {});
     const traderGroups = Object.values(tradersMap);
 
+    // Compute Overall Farm Metrics
+    const activeBatches = batches.filter(b => b.status === 'OPEN');
+    const totalInventory = activeBatches.reduce((sum, b) => sum + b.available_birds, 0);
+    const projectedRevenue = activeBatches.reduce((sum, b) => sum + (b.available_birds * b.average_weight_kg * b.price_per_kg), 0);
+    const allTimeRevenue = orders.reduce((sum, o) => (o.status === 'ACCEPTED' || o.status === 'DELIVERED') ? sum + o.total_price : sum, 0);
+    const needsReplenishment = totalInventory < 500; // Warning threshold
+
     return (
         <div className="container mx-auto px-4 py-8 max-w-7xl">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -157,6 +164,41 @@ export default function FarmerDashboard() {
                         <Plus className="w-4 h-4" /> Add New Batch
                     </button>
                     <button className="text-sm bg-white border px-5 py-2.5 rounded-xl font-semibold text-gray-700 hover:bg-gray-50" onClick={() => supabase.auth.signOut().then(() => window.location.href = '/login')}>Sign Out</button>
+                </div>
+            </div>
+
+            {/* Farm Metrics & Replenishment Overview */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div className="bg-white p-5 rounded-2xl border shadow-sm">
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide flex items-center gap-1.5"><Activity className="w-4 h-4" /> Total Live Stock</p>
+                    <div className="mt-2">
+                        <span className="text-3xl font-extrabold text-gray-900">{totalInventory.toLocaleString()}</span>
+                        <span className="text-sm text-gray-500 font-medium ml-1">birds</span>
+                    </div>
+                </div>
+                <div className="bg-white p-5 rounded-2xl border shadow-sm">
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide flex items-center gap-1.5"><TrendingUp className="w-4 h-4 text-blue-500" /> Projected Value</p>
+                    <div className="mt-2 text-2xl font-extrabold text-blue-600">
+                        ₹{projectedRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </div>
+                </div>
+                <div className="bg-white p-5 rounded-2xl border shadow-sm">
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-500" /> Lifetime Sales</p>
+                    <div className="mt-2 text-2xl font-extrabold text-green-600">
+                        ₹{allTimeRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </div>
+                </div>
+                <div className={`p-5 rounded-2xl border shadow-sm ${needsReplenishment ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'}`}>
+                    <p className={`text-xs font-bold uppercase tracking-wide flex items-center gap-1.5 ${needsReplenishment ? 'text-red-700' : 'text-emerald-700'}`}>
+                        {needsReplenishment ? <AlertTriangle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />} Inventory Health
+                    </p>
+                    <div className="mt-2 font-bold text-lg">
+                        {needsReplenishment ? (
+                            <span className="text-red-800">⚠️ Low Stock! Replenish</span>
+                        ) : (
+                            <span className="text-emerald-800">Optimal Stock</span>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -262,8 +304,8 @@ export default function FarmerDashboard() {
                                                 <div className="text-right">
                                                     <div className="font-medium text-gray-900">₹{hOrder.total_price}</div>
                                                     <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-bold uppercase ${hOrder.status === 'ACCEPTED' ? 'bg-green-100 text-green-800' :
-                                                            hOrder.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
-                                                                hOrder.status === 'PLACED' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100'} `}>
+                                                        hOrder.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                                                            hOrder.status === 'PLACED' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100'} `}>
                                                         {hOrder.status}
                                                     </span>
                                                 </div>
