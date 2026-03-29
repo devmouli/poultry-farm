@@ -21,6 +21,26 @@ export default function FarmerDashboard() {
     const [bWeight, setBweight] = useState('');
     const [bPrice, setBprice] = useState('');
     const [bDate, setBdate] = useState('');
+    const [counterPrices, setCounterPrices] = useState<Record<string, string>>({});
+
+    const applyCounterOffer = async (order: any) => {
+        const newPrice = parseFloat(counterPrices[order.id]);
+        if (isNaN(newPrice) || newPrice <= 0) return alert('Invalid counter offer price');
+
+        const batch = batches.find((b: any) => b.id === order.batch_id);
+        if (!batch) return;
+
+        const newTotal = order.quantity_birds * newPrice * batch.average_weight_kg;
+
+        const { error } = await supabase.from('orders').update({
+            status: 'COUNTER_OFFER',
+            agreed_price_per_kg: newPrice,
+            total_price: newTotal
+        }).eq('id', order.id);
+
+        if (error) alert(error.message);
+        else loadData(user.id);
+    };
 
     useEffect(() => {
         checkUser();
@@ -33,13 +53,13 @@ export default function FarmerDashboard() {
             return;
         }
 
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
+        const { data: profile } = await supabase.from('profiles').select('role, status').eq('id', data.user.id).single();
         if (profile?.role !== 'FARMER') {
             window.location.href = '/trader';
             return;
         }
 
-        setUser(data.user);
+        setUser({ ...data.user, profileStatus: profile.status });
         loadData(data.user.id);
     };
 
@@ -114,6 +134,21 @@ export default function FarmerDashboard() {
     };
 
     if (loading) return <div className="p-8 text-center text-gray-500">Loading your farm...</div>;
+
+    if (user?.profileStatus === 'PENDING') {
+        return (
+            <div className="max-w-md mx-auto mt-32 bg-white p-10 rounded-2xl shadow-xl border border-yellow-200">
+                <div className="flex justify-center mb-6"><Clock className="w-16 h-16 text-yellow-500 animate-pulse" /></div>
+                <h1 className="text-2xl font-extrabold mb-3 text-center text-gray-900">Verification Pending</h1>
+                <p className="text-gray-600 text-center font-medium leading-relaxed mb-8">
+                    Your farm profile has been submitted and is currently under review by our platform administrators. You will be cleared to list marketplace batches once approved.
+                </p>
+                <button className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition" onClick={() => supabase.auth.signOut().then(() => window.location.href = '/login')}>
+                    Sign Out Immediately
+                </button>
+            </div>
+        );
+    }
 
     if (!farm) {
         return (
@@ -250,9 +285,16 @@ export default function FarmerDashboard() {
                                         <div className="text-sm text-gray-600 font-medium">For {o.quantity_birds} birds</div>
                                     </div>
                                 </div>
-                                <div className="flex gap-3 mt-4">
-                                    <button onClick={() => updateOrderStatus(o.id, 'ACCEPTED', o.batch_id, o.quantity_birds)} className="flex-1 bg-green-600 text-white py-2.5 rounded-xl text-sm font-bold hover:bg-green-700 shadow-sm transition">Accept Order</button>
-                                    <button onClick={() => updateOrderStatus(o.id, 'REJECTED', o.batch_id, 0)} className="flex-1 bg-red-50 text-red-700 py-2.5 rounded-xl text-sm font-bold hover:bg-red-100 transition">Reject</button>
+                                <div className="flex flex-col gap-3 mt-4">
+                                    <div className="flex gap-2">
+                                        <button onClick={() => updateOrderStatus(o.id, 'ACCEPTED', o.batch_id, o.quantity_birds)} className="flex-1 bg-green-600 text-white py-2.5 rounded-xl text-sm font-bold hover:bg-green-700 shadow-sm transition">Accept Order</button>
+                                        <button onClick={() => updateOrderStatus(o.id, 'REJECTED', o.batch_id, 0)} className="flex-1 bg-red-50 text-red-700 py-2.5 rounded-xl text-sm font-bold hover:bg-red-100 transition">Reject</button>
+                                    </div>
+                                    <div className="flex gap-2 items-center bg-gray-50 p-2 rounded-xl border">
+                                        <span className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-2">Counter:</span>
+                                        <input type="number" placeholder="New ₹/kg" className="w-24 px-3 py-1.5 text-sm border rounded-lg" value={counterPrices[o.id] || ''} onChange={e => setCounterPrices({ ...counterPrices, [o.id]: e.target.value })} />
+                                        <button onClick={() => applyCounterOffer(o)} className="flex-1 bg-purple-100 text-purple-700 py-1.5 rounded-lg text-sm font-bold hover:bg-purple-200 transition">Suggest Price</button>
+                                    </div>
                                 </div>
                             </div>
                         ))}

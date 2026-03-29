@@ -13,6 +13,29 @@ export default function TraderDashboard() {
 
     // Filters
     const [districtFilter, setDistrictFilter] = useState('');
+    const [minWeight, setMinWeight] = useState('');
+    const [maxPrice, setMaxPrice] = useState('');
+    const [minBirds, setMinBirds] = useState('');
+
+    const acceptCounter = async (order: any) => {
+        const { error } = await supabase.from('orders').update({ status: 'ACCEPTED' }).eq('id', order.id);
+        if (!error) {
+            const batch = batches.find(b => b.id === order.batch_id);
+            if (batch) {
+                const newAvailable = batch.available_birds - order.quantity_birds;
+                const newStatus = newAvailable <= 0 ? 'CLOSED' : 'OPEN';
+                await supabase.from('batches').update({ available_birds: newAvailable, status: newStatus }).eq('id', batch.id);
+            }
+            fetchData(user.id);
+        } else {
+            alert(error.message);
+        }
+    };
+
+    const declineOrder = async (orderId: string) => {
+        await supabase.from('orders').update({ status: 'REJECTED' }).eq('id', orderId);
+        fetchData(user?.id);
+    };
 
     // Order modal
     const [selectedBatch, setSelectedBatch] = useState<any>(null);
@@ -52,6 +75,9 @@ export default function TraderDashboard() {
         if (districtFilter) {
             query = query.ilike('farms.location_district', `%${districtFilter}%`);
         }
+        if (minWeight) query = query.gte('average_weight_kg', parseFloat(minWeight));
+        if (maxPrice) query = query.lte('price_per_kg', parseFloat(maxPrice));
+        if (minBirds) query = query.gte('available_birds', parseInt(minBirds));
 
         const { data: bData } = await query;
         if (bData) setBatches(bData);
@@ -106,16 +132,23 @@ export default function TraderDashboard() {
             <div className="grid md:grid-cols-3 gap-8">
                 {/* Left Column - Market Search */}
                 <div className="md:col-span-2 space-y-6">
-                    <div className="bg-white p-4 rounded-xl shadow-sm border flex items-center gap-4">
-                        <Search className="text-gray-400 w-5 h-5" />
-                        <input
-                            type="text"
-                            value={districtFilter}
-                            onChange={(e) => setDistrictFilter(e.target.value)}
-                            onBlur={() => fetchData(user?.id)}
-                            placeholder="Filter by district (e.g. Hyderabad)..."
-                            className="w-full bg-transparent outline-none focus:ring-0"
-                        />
+                    <div className="bg-white p-4 rounded-xl shadow-sm border grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="flex items-center gap-2 border-b md:border-b-0 md:border-r px-2 pb-2 md:pb-0">
+                            <Search className="text-gray-400 w-4 h-4" />
+                            <input type="text" value={districtFilter} onChange={(e) => setDistrictFilter(e.target.value)} onBlur={() => fetchData(user?.id)} placeholder="District..." className="w-full bg-transparent outline-none focus:ring-0 text-sm font-medium text-gray-700" />
+                        </div>
+                        <div className="flex items-center gap-2 border-b md:border-b-0 md:border-r px-2 pb-2 md:pb-0">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-16">Min Wt:</span>
+                            <input type="number" step="0.1" value={minWeight} onChange={(e) => setMinWeight(e.target.value)} onBlur={() => fetchData(user?.id)} placeholder="kg" className="w-full bg-transparent outline-none focus:ring-0 text-sm font-medium text-gray-700" />
+                        </div>
+                        <div className="flex items-center gap-2 border-b md:border-b-0 md:border-r px-2 pb-2 md:pb-0">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-16">Max Price:</span>
+                            <input type="number" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} onBlur={() => fetchData(user?.id)} placeholder="₹/kg" className="w-full bg-transparent outline-none focus:ring-0 text-sm font-medium text-gray-700" />
+                        </div>
+                        <div className="flex items-center gap-2 px-2">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-16">Min Qty:</span>
+                            <input type="number" value={minBirds} onChange={(e) => setMinBirds(e.target.value)} onBlur={() => fetchData(user?.id)} placeholder="birds" className="w-full bg-transparent outline-none focus:ring-0 text-sm font-medium text-gray-700" />
+                        </div>
                     </div>
 
                     <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
