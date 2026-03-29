@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Plus } from 'lucide-react';
+import { Plus, Users, Clock, CheckCircle } from 'lucide-react';
 
 export default function FarmerDashboard() {
     const [user, setUser] = useState<any>(null);
@@ -45,17 +45,14 @@ export default function FarmerDashboard() {
 
     const loadData = async (userId: string) => {
         setLoading(true);
-        // Get farm
         const { data: farmData } = await supabase.from('farms').select('*').eq('farmer_id', userId).single();
         if (farmData) {
             setFarm(farmData);
 
-            // Get batches
             const { data: batchData } = await supabase.from('batches').select('*').eq('farm_id', farmData.id).order('created_at', { ascending: false });
             if (batchData) {
                 setBatches(batchData);
 
-                // Get orders for these batches
                 const batchIds = batchData.map(b => b.id);
                 if (batchIds.length > 0) {
                     const { data: orderData } = await supabase.from('orders').select('*, profiles(full_name, phone)').in('batch_id', batchIds).order('created_at', { ascending: false });
@@ -90,10 +87,10 @@ export default function FarmerDashboard() {
 
         const { error } = await supabase.from('batches').insert({
             farm_id: farm.id,
-            number_of_birds: parseInt(bBirds),
-            available_birds: parseInt(bBirds),
-            average_weight_kg: parseFloat(bWeight),
-            price_per_kg: parseFloat(bPrice),
+            number_of_birds: numBirds,
+            available_birds: numBirds,
+            average_weight_kg: avgWeight,
+            price_per_kg: price,
             expected_ready_date: bDate,
             status: 'OPEN'
         });
@@ -116,105 +113,196 @@ export default function FarmerDashboard() {
         loadData(user.id);
     };
 
-    if (loading) return <div className="p-8 text-center">Loading your farm...</div>;
+    if (loading) return <div className="p-8 text-center text-gray-500">Loading your farm...</div>;
 
     if (!farm) {
         return (
-            <div className="max-w-md mx-auto mt-20 bg-white p-8 rounded-xl shadow-sm border">
-                <h1 className="text-2xl font-bold mb-4">Setup Your Farm</h1>
+            <div className="max-w-md mx-auto mt-20 bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+                <h1 className="text-2xl font-bold mb-4 text-gray-900">Setup Your Farm Profile</h1>
+                <p className="text-sm text-gray-500 mb-6">Since you are the owner, this is a one-time setup to register your central farm location.</p>
                 <form onSubmit={createFarm} className="space-y-4">
-                    <input required type="text" placeholder="Farm Name" className="w-full px-4 py-2 border rounded-lg" value={farmName} onChange={e => setFarmName(e.target.value)} />
-                    <input required type="text" placeholder="District (e.g., Pune)" className="w-full px-4 py-2 border rounded-lg" value={district} onChange={e => setDistrict(e.target.value)} />
-                    <input required type="text" placeholder="State (e.g., Maharashtra)" className="w-full px-4 py-2 border rounded-lg" value={stateName} onChange={e => setStateName(e.target.value)} />
-                    <button type="submit" className="w-full bg-green-600 text-white py-2 rounded-lg">Create Farm Profile</button>
+                    <input required type="text" placeholder="Farm Name (e.g., Siva Rajesh Farms)" className="w-full px-4 py-2 border rounded-lg" value={farmName} onChange={e => setFarmName(e.target.value)} />
+                    <input required type="text" placeholder="District" className="w-full px-4 py-2 border rounded-lg" value={district} onChange={e => setDistrict(e.target.value)} />
+                    <input required type="text" placeholder="State" className="w-full px-4 py-2 border rounded-lg" value={stateName} onChange={e => setStateName(e.target.value)} />
+                    <button type="submit" className="w-full bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700">Initialize Farm</button>
                 </form>
             </div>
         );
     }
 
+    const pendingOrders = orders.filter(o => o.status === 'PLACED');
+
+    // Group all orders by Trader
+    const tradersMap = orders.reduce((acc: any, order: any) => {
+        const tId = order.trader_id;
+        if (!acc[tId]) acc[tId] = { profile: order.profiles, history: [], totalApprovedSpent: 0, totalApprovedBirds: 0 };
+        acc[tId].history.push(order);
+        if (order.status === 'ACCEPTED' || order.status === 'DELIVERED') {
+            acc[tId].totalApprovedSpent += order.total_price;
+            acc[tId].totalApprovedBirds += order.quantity_birds;
+        }
+        return acc;
+    }, {});
+    const traderGroups = Object.values(tradersMap);
+
     return (
-        <div className="container mx-auto px-4 py-8">
-            <div className="flex justify-between items-center mb-8">
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">{farm.farm_name}</h1>
-                    <p className="text-gray-500">{farm.location_district}, {farm.location_state}</p>
+                    <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">{farm.farm_name}</h1>
+                    <p className="text-gray-500 font-medium">{farm.location_district}, {farm.location_state}</p>
                 </div>
                 <div className="flex gap-4">
-                    <button onClick={() => setShowBatchModal(true)} className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition flex items-center gap-2">
-                        <Plus className="w-4 h-4" /> New Batch
+                    <button onClick={() => setShowBatchModal(true)} className="bg-green-600 shadow-lg text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-green-700 transition flex items-center gap-2 transform hover:-translate-y-0.5">
+                        <Plus className="w-4 h-4" /> Add New Batch
                     </button>
-                    <button className="text-sm bg-white border px-4 py-2 rounded-lg" onClick={() => supabase.auth.signOut().then(() => window.location.href = '/login')}>Sign Out</button>
+                    <button className="text-sm bg-white border px-5 py-2.5 rounded-xl font-semibold text-gray-700 hover:bg-gray-50" onClick={() => supabase.auth.signOut().then(() => window.location.href = '/login')}>Sign Out</button>
                 </div>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
-                <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-                    <div className="p-4 border-b bg-gray-50/50">
-                        <h2 className="font-semibold text-gray-700">My Batches</h2>
+            <div className="grid lg:grid-cols-3 gap-8 mb-12">
+                {/* Column 1: Active Batches */}
+                <div className="lg:col-span-1 border rounded-2xl bg-white shadow-sm overflow-hidden flex flex-col">
+                    <div className="p-5 border-b bg-gray-50/50 flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600"><CheckCircle className="w-4 h-4" /></div>
+                        <h2 className="font-bold text-gray-900">My Batches</h2>
                     </div>
-                    <div className="divide-y">
+                    <div className="divide-y flex-1 overflow-y-auto max-h-[500px]">
                         {batches.map(b => (
-                            <div key={b.id} className="p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:bg-gray-50">
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-bold">{b.available_birds} / {b.number_of_birds} birds avail.</span>
-                                        <span className={`text-xs px-2 py-0.5 rounded ${b.status === 'OPEN' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
-                                            {b.status}
-                                        </span>
-                                    </div>
-                                    <div className="text-sm text-gray-500 mt-1">Ready: {b.expected_ready_date} • {b.average_weight_kg}kg avg • ₹{b.price_per_kg}/kg</div>
-                                </div>
-                            </div>
-                        ))}
-                        {batches.length === 0 && <div className="p-4 text-center text-gray-500">No batches created yet.</div>}
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-                    <div className="p-4 border-b bg-gray-50/50">
-                        <h2 className="font-semibold text-gray-700">Incoming Orders</h2>
-                    </div>
-                    <div className="divide-y">
-                        {orders.map(o => (
-                            <div key={o.id} className="p-4 flex flex-col gap-3 hover:bg-gray-50">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <h3 className="font-bold text-gray-900">{o.profiles?.full_name} <span className="text-sm font-normal text-gray-500">({o.profiles?.phone})</span></h3>
-                                        <p className="text-sm text-gray-600">Requested {o.quantity_birds} birds @ ₹{o.agreed_price_per_kg}/kg</p>
-                                        <p className="font-semibold text-blue-600 mt-1">Total: ₹{o.total_price}</p>
-                                    </div>
-                                    <span className={`text-xs px-2 py-1 rounded font-bold ${o.status === 'PLACED' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100'}`}>
-                                        {o.status}
+                            <div key={b.id} className="p-5 hover:bg-gray-50 transition">
+                                <div className="flex justify-between items-start mb-2">
+                                    <span className="font-bold text-gray-900">{b.available_birds} birds left</span>
+                                    <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${b.status === 'OPEN' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                                        {b.status}
                                     </span>
                                 </div>
-                                {o.status === 'PLACED' && (
-                                    <div className="flex gap-2">
-                                        <button onClick={() => updateOrderStatus(o.id, 'ACCEPTED', o.batch_id, o.quantity_birds)} className="flex-1 bg-green-100 text-green-700 py-2 rounded-lg text-sm font-bold hover:bg-green-200">Accept Order</button>
-                                        <button onClick={() => updateOrderStatus(o.id, 'REJECTED', o.batch_id, 0)} className="flex-1 bg-red-100 text-red-700 py-2 rounded-lg text-sm font-bold hover:bg-red-200">Reject</button>
-                                    </div>
-                                )}
+                                <div className="text-sm text-gray-500 grid gap-1">
+                                    <span>Added: {new Date(b.created_at).toLocaleDateString()}</span>
+                                    <span>Avg: <b>{b.average_weight_kg}kg</b> @ <b>₹{b.price_per_kg}/kg</b></span>
+                                </div>
                             </div>
                         ))}
-                        {orders.length === 0 && <div className="p-4 text-center text-gray-500">No incoming orders.</div>}
+                        {batches.length === 0 && <div className="p-8 text-center text-gray-500">No active batches.</div>}
+                    </div>
+                </div>
+
+                {/* Column 2: Pending Order Approvals */}
+                <div className="lg:col-span-2 border rounded-2xl bg-white shadow-sm overflow-hidden flex flex-col">
+                    <div className="p-5 border-b bg-yellow-50/50 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-yellow-100 flex items-center justify-center text-yellow-700"><Clock className="w-4 h-4" /></div>
+                            <h2 className="font-bold text-gray-900">Action Required: Pending Requests</h2>
+                        </div>
+                        <span className="bg-yellow-200 text-yellow-800 text-xs font-bold px-2.5 py-1 rounded-full">{pendingOrders.length} New</span>
+                    </div>
+                    <div className="divide-y flex-1 overflow-y-auto max-h-[500px]">
+                        {pendingOrders.map(o => (
+                            <div key={o.id} className="p-5 hover:bg-gray-50 transition">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 className="font-bold text-gray-900 text-lg">{o.profiles?.full_name}</h3>
+                                        <p className="text-sm text-gray-500">{o.profiles?.phone}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="font-extrabold text-blue-600 text-xl">₹{o.total_price}</div>
+                                        <div className="text-sm text-gray-600 font-medium">For {o.quantity_birds} birds</div>
+                                    </div>
+                                </div>
+                                <div className="flex gap-3 mt-4">
+                                    <button onClick={() => updateOrderStatus(o.id, 'ACCEPTED', o.batch_id, o.quantity_birds)} className="flex-1 bg-green-600 text-white py-2.5 rounded-xl text-sm font-bold hover:bg-green-700 shadow-sm transition">Accept Order</button>
+                                    <button onClick={() => updateOrderStatus(o.id, 'REJECTED', o.batch_id, 0)} className="flex-1 bg-red-50 text-red-700 py-2.5 rounded-xl text-sm font-bold hover:bg-red-100 transition">Reject</button>
+                                </div>
+                            </div>
+                        ))}
+                        {pendingOrders.length === 0 && <div className="p-12 text-center text-gray-500 font-medium">All caught up! No pending requests.</div>}
                     </div>
                 </div>
             </div>
 
-            {showBatchModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-xl max-w-md w-full p-6">
-                        <h2 className="text-xl font-bold mb-4">Create New Batch</h2>
-                        <form onSubmit={createBatch} className="space-y-4">
-                            <input required type="number" min="1" placeholder="Number of Birds" className="w-full px-3 py-2 border rounded-lg" value={bBirds} onChange={e => setBbirds(e.target.value)} />
-                            <input required type="number" min="0.1" step="0.1" placeholder="Average Weight (kg)" className="w-full px-3 py-2 border rounded-lg" value={bWeight} onChange={e => setBweight(e.target.value)} />
-                            <input required type="number" min="1" placeholder="Price per kg (₹)" className="w-full px-3 py-2 border rounded-lg" value={bPrice} onChange={e => setBprice(e.target.value)} />
-                            <div>
-                                <label className="block text-xs text-gray-500 mb-1">Expected Ready Date</label>
-                                <input required type="date" className="w-full px-3 py-2 border rounded-lg" value={bDate} onChange={e => setBdate(e.target.value)} />
+            {/* Bottom Row: Trader CRM / Network History */}
+            <div className="border rounded-2xl bg-white shadow-sm overflow-hidden mb-8">
+                <div className="p-6 border-b bg-gray-50/50 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center text-purple-700"><Users className="w-5 h-5" /></div>
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-900 tracking-tight">Trader Network & CRM</h2>
+                            <p className="text-sm text-gray-500">Track lifetime volume and order history for every trader.</p>
+                        </div>
+                    </div>
+                    <span className="bg-gray-100 text-gray-700 text-sm font-bold px-3 py-1.5 rounded-lg">{traderGroups.length} Traders Networked</span>
+                </div>
+
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 p-6 gap-6 bg-gray-50/30">
+                    {traderGroups.map((t: any, idx: number) => (
+                        <div key={idx} className="bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition">
+                            <div className="p-5 border-b flex justify-between items-start">
+                                <div>
+                                    <h3 className="font-bold text-gray-900 text-lg">{t.profile?.full_name}</h3>
+                                    <a href={`tel:${t.profile?.phone}`} className="text-blue-600 text-sm font-medium hover:underline">{t.profile?.phone}</a>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Lifetime Value</div>
+                                    <div className="text-green-600 font-extrabold text-lg">₹{t.totalApprovedSpent}</div>
+                                    <div className="text-xs font-bold text-gray-500 bg-gray-100 inline-block px-2 py-0.5 rounded">{t.totalApprovedBirds} Birds</div>
+                                </div>
                             </div>
-                            <div className="flex gap-2 mt-4">
-                                <button type="button" onClick={() => setShowBatchModal(false)} className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
-                                <button type="submit" className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Create</button>
+                            <div className="p-0">
+                                <details className="group">
+                                    <summary className="cursor-pointer p-4 text-sm font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 flex justify-between items-center transition select-none">
+                                        View Order History ({t.history.length})
+                                        <span className="transition group-open:rotate-180">▼</span>
+                                    </summary>
+                                    <div className="px-4 py-2 divide-y border-t bg-white max-h-48 overflow-y-auto">
+                                        {t.history.map((hOrder: any) => (
+                                            <div key={hOrder.id} className="py-2 flex justify-between items-center text-sm">
+                                                <div>
+                                                    <div className="font-semibold">{hOrder.quantity_birds} birds</div>
+                                                    <div className="text-xs text-gray-500">{new Date(hOrder.created_at).toLocaleDateString()}</div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="font-medium text-gray-900">₹{hOrder.total_price}</div>
+                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-bold uppercase ${hOrder.status === 'ACCEPTED' ? 'bg-green-100 text-green-800' :
+                                                            hOrder.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                                                                hOrder.status === 'PLACED' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100'} `}>
+                                                        {hOrder.status}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </details>
+                            </div>
+                        </div>
+                    ))}
+                    {traderGroups.length === 0 && <div className="col-span-full py-8 text-center text-gray-500">You haven't networked with any traders yet.</div>}
+                </div>
+            </div>
+
+            {/* Batch Creation Modal */}
+            {showBatchModal && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl">
+                        <h2 className="text-2xl font-extrabold text-gray-900 mb-6">Create New Batch</h2>
+                        <form onSubmit={createBatch} className="space-y-5">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Number of Birds</label>
+                                <input required type="number" min="1" className="w-full px-4 py-3 border rounded-xl bg-gray-50 focus:bg-white transition" value={bBirds} onChange={e => setBbirds(e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Avg Weight (kg)</label>
+                                <input required type="number" min="0.1" step="0.1" className="w-full px-4 py-3 border rounded-xl bg-gray-50 focus:bg-white transition" value={bWeight} onChange={e => setBweight(e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Price per kg (₹)</label>
+                                <input required type="number" min="1" className="w-full px-4 py-3 border rounded-xl bg-gray-50 focus:bg-white transition" value={bPrice} onChange={e => setBprice(e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Expected Ready Date</label>
+                                <input required type="date" className="w-full px-4 py-3 border rounded-xl bg-gray-50 focus:bg-white transition" value={bDate} onChange={e => setBdate(e.target.value)} />
+                            </div>
+                            <div className="flex gap-3 pt-4 border-t">
+                                <button type="button" onClick={() => setShowBatchModal(false)} className="flex-1 px-4 py-3 border rounded-xl font-bold text-gray-600 hover:bg-gray-50 transition">Cancel</button>
+                                <button type="submit" className="flex-1 px-4 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-md transition">Create Batch</button>
                             </div>
                         </form>
                     </div>
