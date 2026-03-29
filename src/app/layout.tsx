@@ -39,6 +39,9 @@ export default function RootLayout({
         <main className="flex-1 bg-gray-50/50">
           {children}
         </main>
+        <footer className="py-6 text-center text-sm text-gray-500 border-t bg-white">
+          Designed and Created by <strong>Chandramouli</strong>
+        </footer>
       </body>
     </html>
   );
