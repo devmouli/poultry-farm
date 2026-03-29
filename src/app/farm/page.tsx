@@ -135,21 +135,6 @@ export default function FarmerDashboard() {
 
     if (loading) return <div className="p-8 text-center text-gray-500">Loading your farm...</div>;
 
-    if (user?.profileStatus === 'PENDING') {
-        return (
-            <div className="max-w-md mx-auto mt-32 bg-white p-10 rounded-2xl shadow-xl border border-yellow-200">
-                <div className="flex justify-center mb-6"><Clock className="w-16 h-16 text-yellow-500 animate-pulse" /></div>
-                <h1 className="text-2xl font-extrabold mb-3 text-center text-gray-900">Verification Pending</h1>
-                <p className="text-gray-600 text-center font-medium leading-relaxed mb-8">
-                    Your farm profile has been submitted and is currently under review by our platform administrators. You will be cleared to list marketplace batches once approved.
-                </p>
-                <button className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition" onClick={() => supabase.auth.signOut().then(() => window.location.href = '/login')}>
-                    Sign Out Immediately
-                </button>
-            </div>
-        );
-    }
-
     if (!farm) {
         return (
             <div className="max-w-md mx-auto mt-20 bg-white p-8 rounded-xl shadow-sm border border-gray-100">
