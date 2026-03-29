@@ -32,6 +32,13 @@ export default function FarmerDashboard() {
             window.location.href = '/login';
             return;
         }
+
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
+        if (profile?.role !== 'FARMER') {
+            window.location.href = '/trader';
+            return;
+        }
+
         setUser(data.user);
         loadData(data.user.id);
     };

@@ -29,6 +29,13 @@ export default function TraderDashboard() {
             window.location.href = '/login';
             return;
         }
+
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
+        if (profile?.role !== 'TRADER') {
+            window.location.href = '/farm';
+            return;
+        }
+
         setUser(data.user);
         fetchData(data.user.id);
     };
@@ -39,7 +46,8 @@ export default function TraderDashboard() {
         let query = supabase
             .from('batches')
             .select('*, farms(farm_name, location_district)')
-            .eq('status', 'OPEN');
+            .eq('status', 'OPEN')
+            .gt('available_birds', 0);
 
         if (districtFilter) {
             query = query.ilike('farms.location_district', `%${districtFilter}%`);
